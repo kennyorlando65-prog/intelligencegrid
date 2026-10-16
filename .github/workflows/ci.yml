@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel a superseded run on the same ref -- a stale green build is worse than
+# no build, because it gets cited as evidence that the new commit is fine.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Reads backend/.python-version, the same file the Vercel build uses,
+          # so CI and production cannot disagree about the interpreter.
+          python-version-file: backend/.python-version
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Tests
+        # Pinned to the current working directory rather than inheriting the
+        # repo root, so the tests package resolves as `tests.*` exactly as it
+        # does locally.
+        run: python -m pytest -q
+
+  frontend:
+    name: Frontend (lint + typecheck + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # No `cache: npm` on purpose. Caching npm requires a committed
+          # package-lock.json; this repository does not commit one, so enabling
+          # the cache would fail the job rather than speed it up.
+
+      - name: Install dependencies
+        # `npm install`, not `npm ci`, and deliberately so: `npm ci` requires a
+        # committed lockfile and fails without one. If a lockfile is added
+        # later, switch this to `npm ci` and enable `cache: npm` together.
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  vercel-config:
+    name: Deployment config sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate vercel.json is well-formed JSON
+        run: python3 -c "import json;json.load(open('vercel.json'));print('vercel.json parses')"
+
+      - name: Assert the services block declares both halves
+        # This is the failure that silently ships a frontend-only deployment:
+        # a mistyped service name or a missing entrypoint means the Python
+        # function is never mounted, and /api returns Next.js's own 404.
+        run: |
+          python3 - <<'PY'
+          import json, sys, pathlib
+          cfg = json.load(open('vercel.json'))
+          services = cfg.get('services', {})
+          errors = []
+          if 'backend' not in services:
+              errors.append('no "backend" service declared')
+          else:
+              if services['backend'].get('entrypoint') != 'main:app':
+                  errors.append('backend entrypoint must be "main:app"')
+              if services['backend'].get('root') != 'backend/':
+                  errors.append('backend root must be "backend/"')
+              if 'runtime' in services['backend']:
+                  errors.append('services must not declare a "runtime" key')
+          if 'frontend' not in services:
+              errors.append('no "frontend" service declared')
+
+          rewrites = cfg.get('rewrites', [])
+          if not any(r.get('source', '').startswith('/api') for r in rewrites):
+              errors.append('no rewrite routes /api to the backend service')
+
+          if not pathlib.Path('backend/main.py').is_file():
+              errors.append('backend/main.py is missing, so main:app cannot resolve')
+          else:
+              text = pathlib.Path('backend/main.py').read_text()
+              if 'app = FastAPI(' not in text:
+                  errors.append('backend/main.py does not define `app` for main:app')
+
+          if not pathlib.Path('frontend/package.json').is_file():
+              errors.append('frontend/package.json is missing')
+
+          for e in errors:
+              print(f'::error::{e}')
+          sys.exit(1 if errors else 0)
+          PY

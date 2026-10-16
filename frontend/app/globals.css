@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Base layer.
+ *
+ * A dark surface is chosen because this is a monitoring surface read for long
+ * stretches, and because it keeps the two accent hues legible at small sizes.
+ */
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(56, 189, 248, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, rgba(255, 176, 32, 0.05), transparent 55%),
+    #070b11;
+  color: #e8eef7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Slim scrollbars: a monitoring view scrolls constantly, and a chunky bar in
+   every panel eats real estate. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3b4f transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #2a3b4f;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a4f68;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Leaflet ships light-themed popups and controls; override them so the map
+   does not flash a white panel over a dark dashboard. */
+.leaflet-container {
+  font-family: inherit;
+  background: #070b11;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #0b1119;
+  color: #e8eef7;
+  border: 1px solid #2a3b4f;
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.9);
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px;
+  line-height: 1.45;
+}
+
+.leaflet-tooltip {
+  background: #111a25;
+  border: 1px solid #2a3b4f;
+  color: #e8eef7;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: #2a3b4f;
+}
+
+.leaflet-bar a,
+.leaflet-control-attribution {
+  background: #111a25 !important;
+  color: #8fa3bd !important;
+  border-color: #2a3b4f !important;
+}
+
+.leaflet-bar a:hover {
+  background: #1e2b3b !important;
+  color: #e8eef7 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}
+
+/* Respect a reduced-motion preference rather than animating regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

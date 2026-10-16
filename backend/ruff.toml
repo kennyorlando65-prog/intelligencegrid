@@ -1,0 +1,16 @@
+line-length = 100
+target-version = "py311"
+
+[lint]
+# Correctness-focused: pyflakes (F) catches genuine defects such as unused
+# imports and undefined names; pycodestyle (E/W), isort (I) and bugbear (B)
+# cover style and real bug patterns. The `UP` modernization rules are
+# deliberately excluded -- they are cosmetic rewrites (quoted annotations,
+# datetime.UTC aliasing, PEP 695 generics) that add churn without changing
+# behaviour, and this codebase targets 3.11 where the PEP 695 syntax is not
+# available anyway.
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501", "B008"]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011"]
