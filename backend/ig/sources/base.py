@@ -154,6 +154,13 @@ class SourceRegistry:
     def __init__(self, client: HttpClient, store: MedallionStore) -> None:
         self.client = client
         self.store = store
+        # The registry filters sources through the same settings object the
+        # sources themselves use. Without this, `enabled()` raises
+        # AttributeError, and because the pipeline guards each source
+        # individually the failure surfaces as an *empty collection run*
+        # rather than as an error -- every module then renders as "no data",
+        # which is the most misleading possible failure mode.
+        self.settings = get_settings()
         self._sources: dict[str, Source] = {}
 
     def register(self, source: Source) -> None:
