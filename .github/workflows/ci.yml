@@ -76,6 +76,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Tests
+        # Covers the URL construction that produced
+        # "Failed to parse URL from /api/news" in production, and the
+        # formatting rules that keep a missing value from rendering as a zero.
+        run: npm test
+
       - name: Build
         run: npm run build
 
