@@ -18,9 +18,9 @@ Most OSINT aggregations share the same failure: they confuse **absence of
 signal** with **absence of activity**. A country with no English-language wire
 coverage is not a peaceful country — it is an unobserved one. When a dashboard
 renders both as an empty map, it teaches its reader to treat blind spots as
-good news, and that error compounds silently.
+good news, and that error compounds silently. That failure is why I built this.
 
-Three concrete mechanisms address it:
+I built three concrete mechanisms to address it:
 
 1. **Coverage confidence per territory.** Every one of the ~198 territories in
    the reference table is scored on how well it is observed, from source
@@ -137,10 +137,10 @@ project; the knobs in `.env.example` are optional tuning only.
 | **AIS** | — | *No key-less global feed exists*; the module reports this rather than approximating it |
 
 > **On the Africa pack:** it carries ten regional outlets against four for the
-> global wire. This is deliberate. The default weighting of open news feeds
-> toward English-language wire services systematically under-observes African
-> territories, and a platform that measures its own blind spots has to correct
-> for the ones it can.
+> global wire. That weighting is deliberate. The default weighting of open news
+> feeds toward English-language wire services systematically under-observes
+> African territories, and a platform that measures its own blind spots has to
+> correct for the ones it can.
 
 ### Attribution
 
@@ -169,10 +169,10 @@ These are enforced in code and covered by tests, not aspirational:
 
 ### Notable engineering decisions
 
-- **Static GDELT exports over the live API.** The live API rate-limits hard
-  enough to make interactive use unreliable; the `gdeltv2` export files are the
-  same data without the throttling cliff.
-- **Centroid markers over a polygon choropleth.** A true choropleth needs
+- **I use static GDELT exports over the live API.** The live API rate-limits
+  hard enough to make interactive use unreliable; the `gdeltv2` export files
+  are the same data without the throttling cliff.
+- **I use centroid markers over a polygon choropleth.** A true choropleth needs
   several hundred kilobytes of boundary geometry from a third-party CDN. Marker
   colour and size convey the same coverage fact with no external dependency.
 - **Link strength weights source diversity.** Twelve outlets mentioning a link
